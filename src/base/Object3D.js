@@ -7,6 +7,7 @@ const propsValue = {
   rigidBody: null, // 刚体检测
   static: false, // 静态物体
   trigger: false, // 触发器
+  force: [], // 力
   showBoxAxes: false, // 是否显示轴
   showBoxDebug: false, // 是否显示刚体的BOX盒子
   boxColor: 0x19be6b, // BOX盒子颜色

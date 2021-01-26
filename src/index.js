@@ -2,75 +2,42 @@ import Game from 'base/Game'
 import Scene from 'base/Scene'
 import Object3D from 'base/Object3D'
 import Physical from 'base/Physical'
-import CameraFollow from 'base/ThirdCameraControl'
 import { THREE } from 'common/libs'
-import joystick from 'components/Joystick'
-import { getTop, getLeft } from 'common/utils/ui-adapter'
+import Character from 'components/Character'
 
 var scene = new Scene()
 
 var obj = new Object3D({
-  rigidBody: new Physical({ width: 4, height: 5, depth: 2 }),
+  rigidBody: new Physical({ width: 12, height: 6, depth: 12 }),
   boxColor: 0xf8f8f8, // BOX盒子颜色
-  position: new THREE.Vector3(8, 0, 0),
+  position: new THREE.Vector3(8, 18, 0),
   tag: '0',
   showBoxDebug: true
 })
 scene.add(obj)
 
-var obj1 = new Object3D({
+var obj1 = new Character({
   rigidBody: new Physical({ width: 4, height: 5, depth: 4 }),
-  position: new THREE.Vector3(0, 0, 0),
+  position: new THREE.Vector3(0, 8, 0),
   boxColor: 0xdcdcdc, // BOX盒子颜色
   tag: '1',
+  showBoxAxes: true,
   showBoxDebug: true
 })
 scene.add(obj1)
 
+
+var obj3 = new Object3D({
+  rigidBody: new Physical({ width: 120, height: 1, depth: 120 }),
+  boxColor: 0x898989, // BOX盒子颜色
+  position: new THREE.Vector3(0, 0, 0),
+  tag: 'obj3',
+  gravity: false,
+  showBoxDebug: true
+})
+scene.add(obj3)
+
 scene.showBoxDebug()
-
-var keyBoss = {
-  right: 0,
-  top: 0
-}
-
-document.addEventListener('keydown', function (e) {
-  let key = e.key.toLocaleUpperCase()
-  switch (key) {
-    case 'W':
-      keyBoss.right = 0.2
-      break
-    case 'S':
-      keyBoss.right = -0.2
-      break
-    case 'A':
-      keyBoss.top = -0.2
-      break
-    case 'D':
-      keyBoss.top = 0.2
-      break
-    default:
-      break
-  }
-})
-
-document.addEventListener('keyup', function (e) {
-  let key = e.key.toLocaleUpperCase()
-  switch (key) {
-    case 'W':
-    case 'S':
-      keyBoss.right = 0
-      keyBoss.right = 0
-      break
-    case 'A':
-    case 'D':
-      keyBoss.top = 0
-      keyBoss.top = 0
-      break
-    default:
-      break
-  }
-})
 
 obj1.collision = function(boxs) {
   if (boxs.length) {
@@ -80,16 +47,6 @@ obj1.collision = function(boxs) {
   }
 }
 
+window.obj1 = obj1
+
 Game.run()
-
-
-setInterval(() => {
-  var x = 0, y = 0, z = 0
-  if (keyBoss.top !== 0) {
-    y = keyBoss.top
-  }
-  if (keyBoss.right !== 0) {
-    x = keyBoss.right
-  }
-  obj1.movePostion(x, 0, y)
-}, 1000/60)

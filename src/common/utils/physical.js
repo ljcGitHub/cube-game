@@ -117,107 +117,83 @@ export const intersectOBB = function (box1, box2) {
 
 // 获取碰撞之后正确的位置
 export const collisionResponse = function (box1, box2) {
-  const b1_min = { ...box1.min }
-  const b1_max = { ...box1.max }
-  const b2_min = { ...box2.min }
-  const b2_max = { ...box2.max }
   let keys = ['x', 'y', 'z']
-  let keyIndexs = [['y', 'z'], ['x', 'z'], ['x', 'y']]
   let move = { x: 0, y: 0, z: 0 }
-  keys.forEach((key, kindex) => {
-    const keyIndex = keyIndexs[kindex]
-    const _g = keyIndex[0]
-    const _b = keyIndex[1]
-    if (b1_max[_g] > b2_min[_g] &&
-      b1_min[_g] < b2_max[_g] &&
-      b1_max[_b] > b2_min[_b] &&
-      b1_min[_b] < b2_max[_b]) {
-      let d1
-      let delta = box1.move[key]
-      if (delta > 0) {
-        d1 = b2_min[key] - b1_max[key]
-        if (d1 < delta) {
-          move[key] = d1
-        }
-      } else if (delta < 0) {
-        d1 = b2_max[key] -b1_min[key]
-        if (d1 > delta) {
-          move[key] = d1
-        }
+  keys.forEach(key => {
+    let d1
+    let delta = box1.move[key]
+    if (delta > 0) {
+      d1 = box2.min[key] - box1.max[key]
+      if (d1 < delta) {
+        move[key] = d1
+      }
+    } else if (delta < 0) {
+      d1 = box2.max[key] - box1.min[key]
+      if (d1 > delta) {
+        move[key] = d1
       }
     }
   })
   for (const key in move) {
-    const abs = Math.abs(box1.move[key])
-    if (abs >= 0.01 && 1 + abs < Math.abs(move[key])) {
+    const _move = Math.abs(move[key])
+    const _boxmove = Math.abs(box1.move[key])
+    if (_boxmove + 1 < _move) {
       move[key] = 0
     }
   }
   return new THREE.Vector3(move.x, move.y, move.z)
 }
 
-export const octreesCheck = function (boxs) {
-  const check = []
-  const octrees = {}
+export const forceCheck = function (boxs) {
   for (let i = 0; i < boxs.length; i++) {
-    const obj = boxs[i]
-    const body = obj.rigidBody
-    if (body) {
-      const keys = octreesIndex(body)
-      keys.forEach(key => {
-        if (!octrees[key]) octrees[key] = []
-        octrees[key].push({
-          index: i,
-          box: obj
-        })
-      })
+    const item = boxs[i]
+    for (let j = 0; j < item.force.length; j++) {
+      const force = item.force[j]
+      for (const key in force) {
+        item.rigidBody.min[key] += force[key]
+        item.rigidBody.max[key] += force[key]
+        item.rigidBody.move[key] += force[key]
+        item.rigidBody.position[key] += force[key]
+        item.position[key] += force[key]
+      }
     }
   }
-  Object.keys(octrees).forEach(key => {
-    const collisions = octrees[key]
-    for (let i = 0; i < collisions.length; i++) {
-      const item = collisions[i]
-      if (!check[item.index]) check[item.index] = []
-      if (!item.box.static) {
-        for (let j = 0; j < collisions.length; j++) {
-          const _item = collisions[j]
-          if (!check[_item.index]) check[_item.index] = []
-          if (_item.box.uid !== item.box.uid && !check[item.index].includes(_item.box)) {
-            let isCollision = false
-            if (item.box.rigidBody.isAABB && _item.box.rigidBody.isAABB) {
-              isCollision = intersectAABB(item.box.rigidBody, _item.box.rigidBody)
-            } else {
-              isCollision = intersectOBB(item.box.rigidBody, _item.box.rigidBody)
+  return boxs
+}
+
+export const octreesCheck = function (boxs) {
+  const check = []
+  for (let i = 0; i < boxs.length; i++) {
+    const item = boxs[i]
+    if (!check[i]) check[i] = []
+    if (!item.static) {
+      for (let j = 0; j < boxs.length; j++) {
+        const _item = boxs[j]
+        if (!check[j]) check[j] = []
+        if (_item.uid !== item.uid && !check[i].includes(_item)) {
+          let isCollision = false
+          if (item.rigidBody.isAABB && _item.rigidBody.isAABB) {
+            isCollision = intersectAABB(item.rigidBody, _item.rigidBody)
+          } else {
+            isCollision = intersectOBB(item.rigidBody, _item.rigidBody)
+          }
+          if (isCollision) {
+            if (!item.trigger && !_item.trigger) {
+              const itemPostion = collisionResponse(item.rigidBody, _item.rigidBody)
+              const _itemPostion = collisionResponse(_item.rigidBody, item.rigidBody)
+              if (!item.newPostions) item.newPostions = []
+              if (!_item.newPostions) _item.newPostions = []
+              item.newPostions.push(itemPostion)
+              _item.newPostions.push(_itemPostion)
             }
-            if (isCollision) {
-              if (!item.box.trigger && !_item.box.trigger) {
-                const itemPostion = collisionResponse(item.box.rigidBody, _item.box.rigidBody)
-                const _itemPostion = collisionResponse(_item.box.rigidBody, item.box.rigidBody)
-                if (!item.box.newPostions) item.box.newPostions = []
-                if (!_item.box.newPostions) _item.box.newPostions = []
-                item.box.newPostions.push(itemPostion)
-                _item.box.newPostions.push(_itemPostion)
-              }
-              if (!_item.box.static) {
-                check[item.index].push(_item.box)
-                check[_item.index].push(item.box)
-              }
+            if (!_item.static) {
+              check[i].push(_item)
+              check[j].push(item)
             }
           }
         }
       }
     }
-  })
-
+  }
   return check
-}
-
-export const octreesIndex = function (box) {
-  const size = 24
-  const { x: minX, y: minY, z: minZ } = box.min
-  const { x: maxX, y: maxY, z: maxZ } = box.max
-  const minkey = `${Math.floor(minX / size)}-${Math.floor(minY / size)}-${Math.floor(minZ / size)}`
-  const maxkey = `${Math.floor(maxX / size)}-${Math.floor(maxY / size)}-${Math.floor(maxZ / size)}`
-  if (minkey === maxkey) return [maxkey]
-  return [minkey, maxkey]
 }

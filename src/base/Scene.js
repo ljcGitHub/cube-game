@@ -1,6 +1,6 @@
 import { THREE } from 'common/libs'
 import Game from 'base/Game'
-import { octreesCheck } from 'common/utils/physical'
+import { octreesCheck, forceCheck } from 'common/utils/physical'
 
 const geometry = new THREE.BoxBufferGeometry(1, 1, 1)
 
@@ -31,7 +31,7 @@ class Scene {
     this.objects = this.objects.filter(item => item !== obj)
   }
   collisionCheck() {
-    const check = octreesCheck(this.objects)
+    const check = octreesCheck(forceCheck(this.objects))
     this.objects.forEach((obj, index) => {
       if (obj.newPostions) {
         let x = 0, y = 0, z = 0
@@ -44,9 +44,11 @@ class Scene {
         const nps = new THREE.Vector3(x / len, y / len, z / len)
         obj.position.add(nps)
         obj.rigidBody.setPosition(obj.position)
-        obj.rigidBody.move.multiplyScalar(0)
         obj.newPostions = null
       }
+      obj.rigidBody.move.x = 0
+      obj.rigidBody.move.y = 0
+      obj.rigidBody.move.z = 0
       obj.collision(check[index])
     })
   }
@@ -57,7 +59,7 @@ class Scene {
         const b = obj.rigidBody
         const box = new THREE.Mesh(
           geometry,
-          new THREE.MeshBasicMaterial({ color: obj.boxColor, wireframe: true })
+          new THREE.MeshBasicMaterial({ color: obj.boxColor, wireframe: false })
         )
         box.scale.set(b.extents[0] * 2, b.extents[1] * 2, b.extents[2] * 2)
         box.position.copy(b.position)

@@ -15,6 +15,8 @@ class Event {
   constructor() {
     this.events = []
     this.eventIds = {}
+    this.objects = []
+    this.uis = []
     handleType.forEach(types => {
       types.forEach((type, index) => {
         document.addEventListener(type, (e) => {
@@ -66,7 +68,7 @@ class Event {
       if (event && event.type === type) {
         e.event(type, event.data)
         if (type === 'touchend') {
-          eventIds[e.uuid] = null
+          delete eventIds[e.uuid]
         }
       }
     })
@@ -92,10 +94,14 @@ class Event {
     mouse.x = (e.pageX / w) * 2 - 1
     mouse.y = - (e.pageY / h) * 2 + 1
     raycaster.setFromCamera(mouse, UI.cameraOrtho)
-    intersects = raycaster.intersectObjects(this.uis)
+    if (this.uis.length) {
+      intersects = raycaster.intersectObjects(this.uis)
+    }
     if (intersects.length > 0) return intersects
     raycaster.setFromCamera(mouse, Game.camera)
-    intersects = raycaster.intersectObjects(this.objects)
+    if (this.objects.length) {
+      intersects = raycaster.intersectObjects(this.objects)
+    }
     return intersects
   }
   touchObjectData(type, obj, touche) {

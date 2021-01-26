@@ -1,5 +1,4 @@
 import { THREE, canvas, window, Stats, OrbitControls } from 'common/libs'
-import ThirdCameraControl from 'base/ThirdCameraControl'
 import UI from 'base/UI'
 
 const timestamp = () => new Date().getTime()
@@ -10,10 +9,11 @@ const renderer = new THREE.WebGLRenderer({ antialias: true, canvas })
 const Game = {
   scene,
   camera,
-  dt: 0,
+  dt: 0, // 游戏运行时间
+  deltaTime: 0, // 实际运行时间
   last: timestamp(),
-  step: 1 / 60,
-  slow: 1,
+  step: 1 / 60, // 帧数频率
+  slow: 1, // 游戏运行速度
   dev: true,
   instances: [],
   ticks: [],
@@ -24,9 +24,8 @@ const Game = {
     }
     const light = new THREE.DirectionalLight(0xffffff, 1)
     light.position.set(40, 20, 30)
-    camera.position.set(-20, 20, 0)
+    camera.position.set(0, 8, 20)
     camera.lookAt(new THREE.Vector3(0, 0, 0))
-
     scene.fog = new THREE.Fog(0xeeeeee, 500, 10000)
     scene.add(light)
     scene.add(camera)
@@ -43,9 +42,11 @@ const Game = {
     }
   },
   render(dt) {
-    this.ticks.forEach(fn => fn())
+    let ticks = this.ticks.slice()
     this.ticks = []
-    ThirdCameraControl.update()
+    while (ticks.length) {
+      ticks.shift()()
+    }
     if (this.target) {
       this.target.render(dt)
       renderer.clear()
@@ -75,7 +76,8 @@ const Game = {
       this.dt -= slowStep
       this.update(this.step)
     }
-    this.render(this.dt / this.slow)
+    this.deltaTime = this.dt / this.slow
+    this.render(this.deltaTime)
     this.last = this.now
     requestAnimationFrame(() => this.loop())
     this.auxiliaryUtils()
