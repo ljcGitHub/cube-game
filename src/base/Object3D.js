@@ -1,4 +1,5 @@
 import { THREE } from 'common/libs'
+import { guid } from 'common/utils/math'
 
 const propsValue = {
   content: [], // 显示内容
@@ -8,17 +9,12 @@ const propsValue = {
   static: false, // 静态物体
   trigger: false, // 触发器
   force: [], // 力
+  rigidBodyType: '', // 刚体标签
+  rigidBodyFilter: [], // 根据刚体标签过滤碰撞的刚体
   showBoxAxes: false, // 是否显示轴
   showBoxDebug: false, // 是否显示刚体的BOX盒子
   boxColor: 0x19be6b, // BOX盒子颜色
   tag: '' // 标签
-}
-const guid = function () {
-  return 'uxxxxxxxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-    const r = Math.random() * 16 | 0
-    const v = c === 'x' ? r : (r & 0x3 | 0x8)
-    return v.toString(16)
-  })
 }
 
 class Object3D {
@@ -28,26 +24,20 @@ class Object3D {
     Object.keys(props).forEach(key => {
       this[key] = props[key]
     })
-    this.postionChange = true
+    this.positionChange = true
     this.updateRigidBody()
   }
   update(step) {
   }
   updateRigidBody() {
-    if (this.rigidBody && this.postionChange) {
-      this.postionChange = false
+    if (this.rigidBody && this.positionChange) {
+      this.positionChange = false
       this.rigidBody.setPosition(this.position)
       this.rigidBody.setRotation(this.rotation)
     }
   }
-  movePostion(x = 0, y = 0, z = 0) {
-    this.position.x += x
-    this.position.y += y
-    this.position.z += z
-    this.rigidBody && this.rigidBody.movePostion(this.position)
-  }
   setPosition(ps) {
-    this.postionChange = true
+    this.positionChange = true
     this.position.copy(ps)
     this.updateRigidBody()
   }

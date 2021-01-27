@@ -21,6 +21,8 @@ const Game = {
     if (this.dev) {
       this.stats = Stats()
       this.controls = new OrbitControls(camera, renderer.domElement)
+    } else {
+      this.controls = {}
     }
     const light = new THREE.DirectionalLight(0xffffff, 1)
     light.position.set(40, 20, 30)
@@ -91,7 +93,6 @@ const Game = {
     if (this.dev) {
       this.stats.end()
       this.stats.begin()
-      this.controls.update()
     }
   }
 }

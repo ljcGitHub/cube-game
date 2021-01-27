@@ -1,6 +1,6 @@
 import { THREE } from 'common/libs'
 import Game from 'base/Game'
-import { octreesCheck, forceCheck } from 'common/utils/physical'
+import { physicalUpdate } from 'common/utils/physical'
 
 const geometry = new THREE.BoxBufferGeometry(1, 1, 1)
 
@@ -31,24 +31,16 @@ class Scene {
     this.objects = this.objects.filter(item => item !== obj)
   }
   collisionCheck() {
-    const check = octreesCheck(forceCheck(this.objects))
+    const check = physicalUpdate(this.objects)
     this.objects.forEach((obj, index) => {
-      if (obj.newPostions) {
-        let x = 0, y = 0, z = 0
-        let len = obj.newPostions.length
-        obj.newPostions.forEach(ps => {
-          x += ps.x
-          y += ps.y
-          z += ps.z
-        })
-        const nps = new THREE.Vector3(x / len, y / len, z / len)
-        obj.position.add(nps)
-        obj.rigidBody.setPosition(obj.position)
-        obj.newPostions = null
+      if (obj.rigidBody) {
+        const force = obj.rigidBody._force
+        obj.position.x += force.x
+        obj.position.y += force.y
+        obj.position.z += force.z
+        obj.positionChange = true
+        obj.updateRigidBody()
       }
-      obj.rigidBody.move.x = 0
-      obj.rigidBody.move.y = 0
-      obj.rigidBody.move.z = 0
       obj.collision(check[index])
     })
   }

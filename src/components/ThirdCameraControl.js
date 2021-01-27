@@ -23,8 +23,8 @@ class CameraFollow {
         const offset = new THREE.Vector3(0, x * this.radius, y * this.radius)
         playerCamPos.copy(this.player.position)
         playerCamPos.add(offset)
-        this.camera.position.copy(playerCamPos)
-        this.camera.lookAt(this.player.position)
+        // this.camera.position.copy(playerCamPos)
+        // this.camera.lookAt(this.player.position)
         this.update()
       })
     }

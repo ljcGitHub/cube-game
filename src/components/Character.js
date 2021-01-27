@@ -47,7 +47,7 @@ class Character extends Object3D{
   }
   update(step) {
     super.update()
-    this.movePostion(this.offset.x * speed * step, 0, this.offset.y * speed * step)
+    this.force[1] = new THREE.Vector3(this.offset.x * speed * step, 0, this.offset.y * speed * step)
   }
   destroy() {
     this.removeUIControlCamera()

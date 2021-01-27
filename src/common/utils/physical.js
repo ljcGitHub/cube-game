@@ -1,6 +1,6 @@
 import { THREE } from 'common/libs'
 
-const epsilon = Number.EPSILON // 无穷数字
+const EPSILON = Number.EPSILON // 无穷数字
 let v = new THREE.Vector3()
 const vector3Identify = (v1, v2, vs, vf) => {
   if (v2.isVector3) return v.copy(v1)[vs](v2)
@@ -16,6 +16,47 @@ const multiply = (v1, v2) => vector3Identify(v1, v2, 'multiply', 'multiplyScalar
 const divide = (v1, v2) => vector3Identify(v1, v2, 'divide', 'divideScalar')
 // 点积
 const dot = (v1, v2) => vector3Identify(v1, v2, 'dot', 'dot')
+
+const Vector3Keys = ['x', 'y', 'z']
+
+// AABB-AABB
+export const sweptAABB = function (box1, box2) {
+  // 计算进入。进出的位置
+  let isCollision = false
+  let force = { ...box1._force }
+  let keyIndexs = [['y', 'z'], ['x', 'z'], ['x', 'y']]
+  Vector3Keys.forEach((key, kindex) => {
+    const keyIndex = keyIndexs[kindex]
+    const _g = keyIndex[0]
+    const _b = keyIndex[1]
+    if (box1.max[_g] > box2.min[_g] &&
+      box1.min[_g] < box2.max[_g] &&
+      box1.max[_b] > box2.min[_b] &&
+      box1.min[_b] < box2.max[_b]) {
+      let d1
+      let delta = box1._force[key]
+      if (delta > 0 && box1.max[key] <= box2.min[key]) {
+        d1 = box2.min[key] - box1.max[key]
+        if (d1 < delta) {
+          force[key] = d1
+        }
+      } else if (delta < 0 && box1.min[key] >= box2.max[key]) {
+        d1 = box2.max[key] - box1.min[key]
+        if (d1 > delta) {
+          force[key] = d1
+        }
+      }
+    }
+  })
+  for (const key in force) {
+    const af = box1._force[key]
+    const f = force[key]
+    if ((af > 0 && f < 0) || (af < 0 && f > 0)) {
+      force[key] = 0
+    }
+  }
+  return { isCollision, force }
+}
 
 // AABB-AABB
 export const intersectAABB = function (box1, box2) {
@@ -41,7 +82,7 @@ export const intersectOBB = function (box1, box2) {
   for (let i = 0; i < 3; i++) {
     for (let k = 0; k < 3; k++) {
       R[i][k] = dot(VA[i], VB[k])
-      FR[i][k] = Math.abs(R[i][k]) + epsilon
+      FR[i][k] = Math.abs(R[i][k]) + EPSILON
     }
   }
   for (let i = 0; i < 3; i++) {
@@ -115,85 +156,83 @@ export const intersectOBB = function (box1, box2) {
   return true
 }
 
-// 获取碰撞之后正确的位置
-export const collisionResponse = function (box1, box2) {
-  let keys = ['x', 'y', 'z']
-  let move = { x: 0, y: 0, z: 0 }
-  keys.forEach(key => {
-    let d1
-    let delta = box1.move[key]
-    if (delta > 0) {
-      d1 = box2.min[key] - box1.max[key]
-      if (d1 < delta) {
-        move[key] = d1
-      }
-    } else if (delta < 0) {
-      d1 = box2.max[key] - box1.min[key]
-      if (d1 > delta) {
-        move[key] = d1
-      }
-    }
-  })
-  for (const key in move) {
-    const _move = Math.abs(move[key])
-    const _boxmove = Math.abs(box1.move[key])
-    if (_boxmove + 1 < _move) {
-      move[key] = 0
-    }
-  }
-  return new THREE.Vector3(move.x, move.y, move.z)
-}
-
-export const forceCheck = function (boxs) {
+export const computingResultantForce = function (boxs) {
+  const newBoxs = []
   for (let i = 0; i < boxs.length; i++) {
     const item = boxs[i]
-    for (let j = 0; j < item.force.length; j++) {
-      const force = item.force[j]
-      for (const key in force) {
-        item.rigidBody.min[key] += force[key]
-        item.rigidBody.max[key] += force[key]
-        item.rigidBody.move[key] += force[key]
-        item.rigidBody.position[key] += force[key]
-        item.position[key] += force[key]
+    const len = item.force.length
+    const body = item.rigidBody
+    let x = 0, y = 0, z = 0
+    if (len === 0) {
+      body._force = { x, y, z }
+    } else {
+      for (let j = 0; j < len; j++) {
+        const force = item.force[j]
+        x += force.x
+        y += force.y
+        z += force.z
       }
+      body._force = { x: x / len, y: y / len, z: z / len }
     }
+    newBoxs.push(item)
   }
-  return boxs
+  return newBoxs
 }
 
-export const octreesCheck = function (boxs) {
+export const beforeResultantForce = function (data, force) {
+  return {
+    min: {
+      x: data.min.x + force.x,
+      y: data.min.y + force.y,
+      z: data.min.z + force.z
+    },
+    max: {
+      x: data.max.x + force.x,
+      y: data.max.y + force.y,
+      z: data.max.z + force.z
+    }
+  }
+}
+
+export const physicalUpdate = function (data) {
   const check = []
-  for (let i = 0; i < boxs.length; i++) {
-    const item = boxs[i]
-    if (!check[i]) check[i] = []
-    if (!item.static) {
-      for (let j = 0; j < boxs.length; j++) {
-        const _item = boxs[j]
-        if (!check[j]) check[j] = []
-        if (_item.uid !== item.uid && !check[i].includes(_item)) {
-          let isCollision = false
-          if (item.rigidBody.isAABB && _item.rigidBody.isAABB) {
-            isCollision = intersectAABB(item.rigidBody, _item.rigidBody)
-          } else {
-            isCollision = intersectOBB(item.rigidBody, _item.rigidBody)
-          }
-          if (isCollision) {
-            if (!item.trigger && !_item.trigger) {
-              const itemPostion = collisionResponse(item.rigidBody, _item.rigidBody)
-              const _itemPostion = collisionResponse(_item.rigidBody, item.rigidBody)
-              if (!item.newPostions) item.newPostions = []
-              if (!_item.newPostions) _item.newPostions = []
-              item.newPostions.push(itemPostion)
-              _item.newPostions.push(_itemPostion)
-            }
-            if (!_item.static) {
-              check[i].push(_item)
-              check[j].push(item)
-            }
-          }
+  const boxs = computingResultantForce(data)
+  let index = 0
+  while (boxs.length) {
+    const item = boxs.shift()
+    const itemBody = item.rigidBody
+    const force = itemBody._force
+    if (!check[index]) check[index] = []
+    for (let i = 0; i < boxs.length; i++) {
+      const _item = boxs[i]
+      const _itemBody = _item.rigidBody
+      if (!check[i]) check[i] = []
+      let isCollision = false
+      if (!item.trigger && itemBody.isAABB && _itemBody.isAABB) {
+        const res1 = sweptAABB(itemBody, _itemBody)
+        const res2 = sweptAABB(_itemBody, itemBody)
+        if (!itemBody._forces) itemBody._forces = []
+        if (!_itemBody._forces) _itemBody._forces = []
+        itemBody._force = res1.force
+        _itemBody._force = res2.force
+        isCollision = res1.isCollision
+      } else {
+        if (itemBody.isAABB && _itemBody.isAABB) {
+          isCollision = intersectAABB(beforeResultantForce(itemBody, force), _itemBody)
+        } else {
+          isCollision = intersectOBB(beforeResultantForce(itemBody, force), _itemBody)
+        }
+      }
+      if (isCollision) {
+        if (!_item.static) {
+          check[index].push(_item)
+        }
+        if (!item.static) {
+          check[i].push(item)
         }
       }
     }
+    index++
   }
   return check
 }

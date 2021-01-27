@@ -1,3 +1,12 @@
+// 获取uuid
+export const guid = function () {
+  return 'uxxxxxxxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = Math.random() * 16 | 0
+    const v = c === 'x' ? r : (r & 0x3 | 0x8)
+    return v.toString(16)
+  })
+}
+
 // 限制范围
 export const limit = function (x, min, max) {
   return Math.max(min, Math.min(max, x))

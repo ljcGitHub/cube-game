@@ -5,7 +5,6 @@ class BoxPhysical {
     this.isAABB = true
     this.position = this.center = new THREE.Vector3()
     this.rotation = new THREE.Vector3()
-    this.move = new THREE.Vector3()
     this.setExtents(option)
     this.getUnityVector()
   }
@@ -18,11 +17,6 @@ class BoxPhysical {
     this.position.copy(ps)
     this.center = this.position
     this.getBoxInfo()
-  }
-  movePostion(ps) {
-    this.move.copy(ps)
-    this.move.sub(this.position)
-    this.setPosition(ps)
   }
   setRotation(rotation) {
     if (rotation.x && rotation.y && rotation.z) this.isAABB = false

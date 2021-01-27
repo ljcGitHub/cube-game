@@ -1,4 +1,5 @@
 import { THREE } from 'common/libs'
+import Game from 'base/Game'
 import UI from 'base/UI'
 import Assets from 'base/Assets'
 import { addEvent, removeEvent } from 'base/Event'
@@ -72,6 +73,7 @@ class Joystick {
     this.option.touchstart && this.option.touchstart(e)
   }
   touchmove(e) {
+    Game.controls.enabled = false
     if (this.isTouch) {
       const newPosition = new THREE.Vector2(
         e.touche.pageX - this.offset.x,
@@ -92,6 +94,7 @@ class Joystick {
     this.isTouch = false
     this.setCenter()
     this.option.touchend && this.option.touchend(e)
+    Game.controls.enabled = true
   }
   setCenter() {
     this.getTweenOption()
