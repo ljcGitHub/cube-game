@@ -158,6 +158,7 @@ export const intersectOBB = function (box1, box2) {
 
 export const computingResultantForce = function (boxs) {
   const newBoxs = []
+  const gravity = 1
   for (let i = 0; i < boxs.length; i++) {
     const item = boxs[i]
     const len = item.force.length
@@ -173,6 +174,9 @@ export const computingResultantForce = function (boxs) {
         z += force.z
       }
       body._force = { x: x / len, y: y / len, z: z / len }
+    }
+    if (item.gravity) {
+      body._force.y -= gravity
     }
     newBoxs.push(item)
   }
@@ -208,27 +212,39 @@ export const physicalUpdate = function (data) {
       const _itemBody = _item.rigidBody
       if (!check[i]) check[i] = []
       let isCollision = false
-      if (!item.trigger && itemBody.isAABB && _itemBody.isAABB) {
-        const res1 = sweptAABB(itemBody, _itemBody)
-        const res2 = sweptAABB(_itemBody, itemBody)
-        if (!itemBody._forces) itemBody._forces = []
-        if (!_itemBody._forces) _itemBody._forces = []
-        itemBody._force = res1.force
-        _itemBody._force = res2.force
-        isCollision = res1.isCollision
-      } else {
+      let isFilter = false
+      // 判断是否刚体过滤
+      if (item.rigidBodyType || _item.rigidBodyType) {
+        if (item.rigidBodyFilter.includes(_item.rigidBodyType) || _item.rigidBodyFilter.includes(item.rigidBodyType)) {
+          isFilter = true
+        }
+      }
+      // 刚体需要检测碰撞
+      if (isFilter === false) {
+        // 刚体类型检测
         if (itemBody.isAABB && _itemBody.isAABB) {
-          isCollision = intersectAABB(beforeResultantForce(itemBody, force), _itemBody)
+          if (!item.trigger && !_item.trigger) {
+            const res1 = sweptAABB(itemBody, _itemBody)
+            const res2 = sweptAABB(_itemBody, itemBody)
+            if (!itemBody._forces) itemBody._forces = []
+            if (!_itemBody._forces) _itemBody._forces = []
+            itemBody._force = res1.force
+            _itemBody._force = res2.force
+            isCollision = res1.isCollision
+          } else {
+            isCollision = intersectAABB(beforeResultantForce(itemBody, force), _itemBody)
+          }
         } else {
           isCollision = intersectOBB(beforeResultantForce(itemBody, force), _itemBody)
         }
-      }
-      if (isCollision) {
-        if (!_item.static) {
-          check[index].push(_item)
-        }
-        if (!item.static) {
-          check[i].push(item)
+        // 刚体检测结果
+        if (isCollision) {
+          if (!_item.static) {
+            check[index].push(_item)
+          }
+          if (!item.static) {
+            check[i].push(item)
+          }
         }
       }
     }

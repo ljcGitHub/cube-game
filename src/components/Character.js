@@ -6,7 +6,7 @@ import Joystick from 'components/Joystick'
 
 const speed = 10
 
-class Character extends Object3D{
+class Character extends Object3D {
   constructor(option) {
     super(option)
     this.offset = new THREE.Vector2()
@@ -47,7 +47,11 @@ class Character extends Object3D{
   }
   update(step) {
     super.update()
-    this.force[1] = new THREE.Vector3(this.offset.x * speed * step, 0, this.offset.y * speed * step)
+    this.force.push({
+      x: this.offset.x * speed * step,
+      y: 0,
+      z: this.offset.y * speed * step
+    })
   }
   destroy() {
     this.removeUIControlCamera()

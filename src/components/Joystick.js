@@ -14,6 +14,10 @@ class Joystick {
     this.roundSize = Math.floor(this.circleSize * 0.9)
     this.circle = this.getCircle()
     this.round = this.getRound()
+    
+    this.circle.material.opacity = 0.6
+    this.round.material.opacity = 0.6
+    
     this.initEvent()
     this.initData()
     this.initBackground()
@@ -73,7 +77,7 @@ class Joystick {
     this.option.touchstart && this.option.touchstart(e)
   }
   touchmove(e) {
-    Game.controls.enabled = false
+    Game.controlsEnabled = false
     if (this.isTouch) {
       const newPosition = new THREE.Vector2(
         e.touche.pageX - this.offset.x,
@@ -94,7 +98,7 @@ class Joystick {
     this.isTouch = false
     this.setCenter()
     this.option.touchend && this.option.touchend(e)
-    Game.controls.enabled = true
+    Game.controlsEnabled = true
   }
   setCenter() {
     this.getTweenOption()

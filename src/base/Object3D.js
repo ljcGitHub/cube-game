@@ -6,6 +6,7 @@ const propsValue = {
   position: new THREE.Vector3(), // 位置
   rotation: new THREE.Vector3(), // 旋转
   rigidBody: null, // 刚体检测
+  gravity: false, // 重力
   static: false, // 静态物体
   trigger: false, // 触发器
   force: [], // 力
@@ -17,6 +18,7 @@ const propsValue = {
   tag: '' // 标签
 }
 
+// 自定义的3d对象
 class Object3D {
   constructor(option = {}) {
     const props = { ...propsValue, ...option }
@@ -49,6 +51,7 @@ class Object3D {
   collision(boxs) {
   }
   destroy() {
+    if (this.rigidBody) this.rigidBody = null
   }
 }
 

@@ -39,6 +39,7 @@ class Scene {
         obj.position.y += force.y
         obj.position.z += force.z
         obj.positionChange = true
+        obj.force = []
         obj.updateRigidBody()
       }
       obj.collision(check[index])

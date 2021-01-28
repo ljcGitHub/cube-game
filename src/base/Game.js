@@ -21,8 +21,6 @@ const Game = {
     if (this.dev) {
       this.stats = Stats()
       this.controls = new OrbitControls(camera, renderer.domElement)
-    } else {
-      this.controls = {}
     }
     const light = new THREE.DirectionalLight(0xffffff, 1)
     light.position.set(40, 20, 30)
@@ -34,6 +32,7 @@ const Game = {
     renderer.autoClear = false; // To allow render overlay on top of sprited sphere
     renderer.setSize(window.innerWidth, window.innerHeight)
     renderer.setClearColor(scene.fog.color)
+    this.controlsEnabled = true
     requestAnimationFrame(() => {
       this.loop()
     })
@@ -93,6 +92,7 @@ const Game = {
     if (this.dev) {
       this.stats.end()
       this.stats.begin()
+      Game.controls.enabled = this.controlsEnabled
     }
   }
 }
