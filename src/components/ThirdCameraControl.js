@@ -6,8 +6,8 @@ const deg = Math.PI / 180
 // 相机跟随速度
 class CameraFollow {
   constructor() {
-    this.radius = 30
-    this.angle = 60
+    this.radius = 22
+    this.angle = 65
   }
   setControl(player, camera) {
     this.player = player
@@ -23,8 +23,8 @@ class CameraFollow {
         const offset = new THREE.Vector3(0, x * this.radius, y * this.radius)
         playerCamPos.copy(this.player.position)
         playerCamPos.add(offset)
-        // this.camera.position.copy(playerCamPos)
-        // this.camera.lookAt(this.player.position)
+        this.camera.position.copy(playerCamPos)
+        this.camera.lookAt(this.player.position)
         this.update()
       })
     }

@@ -23,26 +23,35 @@ class Scene {
     this.objects.forEach(obj => obj.render(dt))
   }
   add(obj) {
-    obj.content.forEach(obj => Game.scene.add(obj))
+    obj.content && Game.scene.add(obj.content)
+    obj.addContent = content => Game.scene.add(content)
+    obj.removeContent = content => Game.scene.remove(content)
     this.objects.push(obj)
   }
   remove(obj) {
-    obj.content.forEach(obj => Game.scene.remove(obj))
+    obj.addContent = null
+    obj.removeContent = null
+    obj.content && Game.scene.remove(obj.content)
     this.objects = this.objects.filter(item => item !== obj)
   }
   collisionCheck() {
-    const check = physicalUpdate(this.objects)
+    const bodyBoxs = []
     this.objects.forEach((obj, index) => {
       if (obj.rigidBody) {
-        const force = obj.rigidBody._force
-        obj.position.x += force.x
-        obj.position.y += force.y
-        obj.position.z += force.z
-        obj.positionChange = true
-        obj.force = []
-        obj.updateRigidBody()
+        bodyBoxs.push(obj)
       }
-      obj.collision(check[index])
+    })
+    physicalUpdate(bodyBoxs).forEach((obj, index) => {
+      const force = obj.rigidBody.force
+      const check = obj.check
+      obj.position.x += force.x
+      obj.position.y += force.y
+      obj.position.z += force.z
+      obj.positionChange = true
+      obj.rigidBody.force = { x: 0, y: 0, z: 0 }
+      obj.check = []
+      obj.updateRigidBody()
+      obj.collision(check)
     })
   }
   showBoxDebug() {
@@ -52,7 +61,7 @@ class Scene {
         const b = obj.rigidBody
         const box = new THREE.Mesh(
           geometry,
-          new THREE.MeshBasicMaterial({ color: obj.boxColor, wireframe: false })
+          new THREE.MeshPhongMaterial({ color: obj.boxColor, wireframe: obj.showBoxWireframe })
         )
         box.scale.set(b.extents[0] * 2, b.extents[1] * 2, b.extents[2] * 2)
         box.position.copy(b.position)
@@ -68,6 +77,8 @@ class Scene {
       this.objects.forEach((obj, index) => {
         const box = this.boxs[index]
         if (box) {
+          const b = obj.rigidBody
+          box.scale.set(b.extents[0] * 2, b.extents[1] * 2, b.extents[2] * 2)
           box.position.copy(obj.position)
           box.rotation.copy(obj.rotation)
         }

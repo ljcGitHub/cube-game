@@ -23,7 +23,7 @@ const Game = {
       this.controls = new OrbitControls(camera, renderer.domElement)
     }
     const light = new THREE.DirectionalLight(0xffffff, 1)
-    light.position.set(40, 20, 30)
+    light.position.set(0, 40, 30)
     camera.position.set(0, 8, 20)
     camera.lookAt(new THREE.Vector3(0, 0, 0))
     scene.fog = new THREE.Fog(0xeeeeee, 500, 10000)
@@ -72,13 +72,9 @@ const Game = {
   loop() {
     this.now = timestamp()
     this.dt = this.dt + Math.min(1, (this.now - this.last) / 1000)
-    const slowStep = this.slow * this.step
-    while (this.dt > slowStep) {
-      this.dt -= slowStep
-      this.update(this.step)
-    }
-    this.deltaTime = this.dt / this.slow
-    this.render(this.deltaTime)
+    this.deltaTime += this.slow * this.dt
+    this.update(this.step)
+    this.render(this.slow * this.step)
     this.last = this.now
     requestAnimationFrame(() => this.loop())
     this.auxiliaryUtils()

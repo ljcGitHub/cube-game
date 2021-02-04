@@ -27,7 +27,7 @@ class FSM {
       if (n && !this[n]) {
         item.variables = 'before' + n.substr(0, 1).toLocaleUpperCase() + n.substr(1)
         this[n] = this.methods[n] || nullHanlde
-        this[state.variables] = this.methods[item.variables] || beforeHanlde
+        this[item.variables] = this.methods[item.variables] || beforeHanlde
       }
     })
   }
@@ -41,6 +41,10 @@ class FSM {
         }
       }
     }
+  }
+  destroy() {
+    this.transitions = []
+    this.methods = null
   }
 }
 

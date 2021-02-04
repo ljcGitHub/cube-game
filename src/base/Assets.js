@@ -37,7 +37,7 @@ const cloneGltf = function (gltf) {
       orderedCloneBones.push(cloneBone)
     }
     cloneSkinnedMesh.bind(
-      new Skeleton(orderedCloneBones, skeleton.boneInverses),
+      new THREE.Skeleton(orderedCloneBones, skeleton.boneInverses),
       cloneSkinnedMesh.matrixWorld)
   }
   return clone

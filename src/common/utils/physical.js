@@ -19,22 +19,26 @@ const dot = (v1, v2) => vector3Identify(v1, v2, 'dot', 'dot')
 
 const Vector3Keys = ['x', 'y', 'z']
 
+const step =  1 / 60
+
 // AABB-AABB
 export const sweptAABB = function (box1, box2) {
   // 计算进入。进出的位置
-  let isCollision = false
-  let force = { ...box1._force }
+  let force = { ...box1.force }
   let keyIndexs = [['y', 'z'], ['x', 'z'], ['x', 'y']]
   Vector3Keys.forEach((key, kindex) => {
     const keyIndex = keyIndexs[kindex]
     const _g = keyIndex[0]
     const _b = keyIndex[1]
-    if (box1.max[_g] > box2.min[_g] &&
-      box1.min[_g] < box2.max[_g] &&
-      box1.max[_b] > box2.min[_b] &&
-      box1.min[_b] < box2.max[_b]) {
+    const __g = box1.max[_g] > box2.min[_g] && box1.min[_g] < box2.max[_g]
+    const __b = box1.max[_b] > box2.min[_b] && box1.min[_b] < box2.max[_b]
+    const bianJieZhi = (box1.max[_g] == box2.min[_g]) ||
+      (box1.min[_g] == box2.max[_g]) ||
+      (box1.max[_b] == box2.min[_b]) ||
+      (box1.min[_b] == box2.max[_b])
+    if ((__g && __b) || bianJieZhi) {
       let d1
-      let delta = box1._force[key]
+      let delta = box1.force[key]
       if (delta > 0 && box1.max[key] <= box2.min[key]) {
         d1 = box2.min[key] - box1.max[key]
         if (d1 < delta) {
@@ -49,13 +53,13 @@ export const sweptAABB = function (box1, box2) {
     }
   })
   for (const key in force) {
-    const af = box1._force[key]
+    const af = box1.force[key]
     const f = force[key]
     if ((af > 0 && f < 0) || (af < 0 && f > 0)) {
       force[key] = 0
     }
   }
-  return { isCollision, force }
+  return force
 }
 
 // AABB-AABB
@@ -158,26 +162,11 @@ export const intersectOBB = function (box1, box2) {
 
 export const computingResultantForce = function (boxs) {
   const newBoxs = []
-  const gravity = 1
   for (let i = 0; i < boxs.length; i++) {
     const item = boxs[i]
-    const len = item.force.length
     const body = item.rigidBody
-    let x = 0, y = 0, z = 0
-    if (len === 0) {
-      body._force = { x, y, z }
-    } else {
-      for (let j = 0; j < len; j++) {
-        const force = item.force[j]
-        x += force.x
-        y += force.y
-        z += force.z
-      }
-      body._force = { x: x / len, y: y / len, z: z / len }
-    }
-    if (item.gravity) {
-      body._force.y -= gravity
-    }
+    item.check = []
+    body.isGrounded = false
     newBoxs.push(item)
   }
   return newBoxs
@@ -201,16 +190,13 @@ export const beforeResultantForce = function (data, force) {
 export const physicalUpdate = function (data) {
   const check = []
   const boxs = computingResultantForce(data)
-  let index = 0
   while (boxs.length) {
     const item = boxs.shift()
     const itemBody = item.rigidBody
-    const force = itemBody._force
-    if (!check[index]) check[index] = []
+    const force = itemBody.force
     for (let i = 0; i < boxs.length; i++) {
       const _item = boxs[i]
       const _itemBody = _item.rigidBody
-      if (!check[i]) check[i] = []
       let isCollision = false
       let isFilter = false
       // 判断是否刚体过滤
@@ -224,13 +210,17 @@ export const physicalUpdate = function (data) {
         // 刚体类型检测
         if (itemBody.isAABB && _itemBody.isAABB) {
           if (!item.trigger && !_item.trigger) {
-            const res1 = sweptAABB(itemBody, _itemBody)
-            const res2 = sweptAABB(_itemBody, itemBody)
-            if (!itemBody._forces) itemBody._forces = []
-            if (!_itemBody._forces) _itemBody._forces = []
-            itemBody._force = res1.force
-            _itemBody._force = res2.force
-            isCollision = res1.isCollision
+            const forceY = itemBody.force.y
+            const _forceY = _itemBody.force.y
+            itemBody.force = sweptAABB(itemBody, _itemBody)
+            _itemBody.force = sweptAABB(_itemBody, itemBody)
+            isCollision = intersectAABB(beforeResultantForce(itemBody, force), _itemBody)
+            if (forceY <  0 && itemBody.force.y === 0) {
+              itemBody.isGrounded = true
+            }
+            if (_forceY < 0 && _itemBody.force.y === 0) {
+              _itemBody.isGrounded = true
+            }
           } else {
             isCollision = intersectAABB(beforeResultantForce(itemBody, force), _itemBody)
           }
@@ -240,15 +230,15 @@ export const physicalUpdate = function (data) {
         // 刚体检测结果
         if (isCollision) {
           if (!_item.static) {
-            check[index].push(_item)
+            item.check.push(_item)
           }
           if (!item.static) {
-            check[i].push(item)
+            _item.check.push(item)
           }
         }
       }
     }
-    index++
+    check.push(item)
   }
   return check
 }

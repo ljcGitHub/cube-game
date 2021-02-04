@@ -14,10 +14,6 @@ class Joystick {
     this.roundSize = Math.floor(this.circleSize * 0.9)
     this.circle = this.getCircle()
     this.round = this.getRound()
-    
-    this.circle.material.opacity = 0.6
-    this.round.material.opacity = 0.6
-    
     this.initEvent()
     this.initData()
     this.initBackground()

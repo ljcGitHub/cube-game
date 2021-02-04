@@ -3,6 +3,9 @@ import { THREE } from 'common/libs'
 class BoxPhysical {
   constructor(option) {
     this.isAABB = true
+    this.force = { x: 0, y: 0, z: 0 }
+    this.isGrounded = true
+    this.endurance = []
     this.position = this.center = new THREE.Vector3()
     this.rotation = new THREE.Vector3()
     this.setExtents(option)
@@ -52,6 +55,9 @@ class BoxPhysical {
       y: center.y - extents[1],
       z: center.z - extents[2]
     }
+  }
+  destroy() {
+    
   }
 }
 
